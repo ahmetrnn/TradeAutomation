@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: cryptobot
+      POSTGRES_USER: cryptouser
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  bot:
+    build: .
+    environment:
+      - DATABASE_URL=postgresql://cryptouser:${DB_PASSWORD}@postgres/cryptobot
+      - REDIS_URL=redis://redis:6379
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DEMO_MODE=${DEMO_MODE}
+      - WHALE_THRESHOLD_SOL=${WHALE_THRESHOLD_SOL}
+    volumes:
+      - ./logs:/app/logs
+      - ./reports:/app/reports
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
